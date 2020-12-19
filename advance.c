@@ -1,6 +1,6 @@
 /*
 
-  初期解の個数によってどれくらいの結果が得られるかを実験する
+  焼きなまし法 + 2-opt法
 
 */
 
@@ -50,7 +50,7 @@ void draw_line(Map map, City a, City b);
 void draw_route(Map map, City *city, int n, const int *route);
 void plot_cities(FILE* fp, Map map, City *city, int n, const int *route);
 double distance(City a, City b);
-double solve(const City *city, int n, int *route, int times);
+double solve(const City *city, int n, int *route);
 Map init_map(const int width, const int height);
 void free_map_dot(Map m);
 City *load_cities(const char* filename,int *n);
@@ -94,8 +94,6 @@ int main(int argc, char**argv)
   const int height = 40;
   const int max_cities = 100;
 
-  srand((unsigned)time(NULL));
-
   Map map = init_map(width, height);
   
   FILE *fp = stdout; // とりあえず描画先は標準出力としておく
@@ -116,16 +114,13 @@ int main(int argc, char**argv)
   // 訪れた町を記録するフラグ
   //int *visited = (int*)calloc(n, sizeof(int));
 
-  for (int t=1; t<=8192; t*=2) {
-    printf("%d times\n", t);
-    double sum = 0;
-    for (int s=0; s<8; s++) {
-      const double d = solve(city,n,route,t);
-      sum += d;
-      printf("total distance = %f\n", d);
-    }
-    printf("average distance = %f\n", sum / 8);
+  const double d = solve(city,n,route);
+  plot_cities(fp, map, city, n, route);
+  printf("total distance = %f\n", d);
+  for (int i = 0 ; i < n ; i++){
+    printf("%d -> ", route[i]);
   }
+  printf("0\n");
 
   // 動的確保した環境ではfreeをする
   free(route);
@@ -225,48 +220,35 @@ Answer calc(const City *city, int n) {
   int route[n];
   gen_random_route(n, route);
 
-  int count = 0;
-  while (1) {
-    count++;
+  double co = -1e-6; //最大化なら正、最小化なら負。絶対値が小さいほど悪化方向へ進みやすい。Tが大きいほど小さくできる。
+  int T = 1e6;
 
-    int swap_i = -1, swap_j = -1;
-    double min_diff = 0;
+  for (int t=0; t<T; t++) {
 
-    for (int i=1; i<n; i++) {
-      for (int j=i+1; j<n; j++) {
+    int i = rand() % (n-1) + 1;
+    int j = rand() % (n-1) + 1;
 
-        if (city[route[i]].x == city[route[j]].x && city[route[i]].y == city[route[j]].y)
-          continue;
-
-        // 実際に入れ替えて距離がどれだけ変わるかを計算する
-        // 変わるのは入れ替えた部分周辺のみなので、そこだけで差をとれば十分
-        double diff = 0;
-        diff -= dist(city, route, i, (i+n-1)%n);
-        diff -= dist(city, route, i, (i+1)%n);
-        diff -= dist(city, route, j, (j+n-1)%n);
-        diff -= dist(city, route, j, (j+1)%n);
-        swap(&route[i], &route[j]);
-        diff += dist(city, route, i, (i+n-1)%n);
-        diff += dist(city, route, i, (i+1)%n);
-        diff += dist(city, route, j, (j+n-1)%n);
-        diff += dist(city, route, j, (j+1)%n);
-
-        // 入れ替えて距離が短くなったら
-        // ただし同じ位置に都市があり変化しない場合は0ではなく-1e16くらいになるので無視
-        if (diff < min_diff - 1e-15) {
-          swap_i = i;
-          swap_j = j;
-          min_diff = diff;
-        }
-
-        swap(&route[i], &route[j]); // 元に戻す
-      }
+    // 2-opt法
+    
+    if (i > j) {
+      swap(&i, &j);
     }
+    if (j - i <= 2) continue; // 確実に交差していない
 
-    if (swap_i == -1) { // 局所最適の場合
-      break;
-    } else {
-      swap(&route[swap_i], &route[swap_j]);
+    double diff = 0;
+    diff -= dist(city, route, i, (i + 1) % n);
+    diff -= dist(city, route, (j - 1 + n) % n, j);
+    diff += dist(city, route, i, (j - 1 + n) % n);
+    diff += dist(city, route, (i + 1) % n, j);
+
+    if ((rand() / (double)RAND_MAX) < exp(co * diff * t)) {
+      // i番目とj番目の間をすべて逆向きにする
+      while (1) {
+        i = (i + 1) % n;
+        j = (j - 1 + n) % n;
+        swap(&route[i], &route[j]);
+        if (0 <= j - i && j - i <= 1) break;
+      }
     }
 
   }
@@ -285,10 +267,12 @@ Answer calc(const City *city, int n) {
   return (Answer){.dist = sum_d, .route = ans_route};
 }
 
-double solve(const City *city, int n, int *route, int times)
+double solve(const City *city, int n, int *route)
 {
 
+  srand((unsigned)time(NULL));
   Answer ans = (Answer){.dist = 1e15};
+  int times = 10;
   for (int i=0; i<times; i++) {
     Answer result = calc(city, n);
     //printf("d:%lf\n", result.dist);

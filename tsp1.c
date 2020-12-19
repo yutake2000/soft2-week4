@@ -1,3 +1,9 @@
+/*
+
+  山登り法で5000個初期解を作って探索する。
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,7 +82,7 @@ City *load_cities(const char *filename, int *n)
   for (int i = 0 ; i < *n ; i++){
     fread(&city[i].x, sizeof(int), 1, fp);
     fread(&city[i].y, sizeof(int), 1, fp);
-    printf("(x, y) = (%d, %d)\n", city[i].x, city[i].y);
+    //printf("(x, y) = (%d, %d)\n", city[i].x, city[i].y);
   }
   fclose(fp);
   return city;
