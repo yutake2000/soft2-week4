@@ -3,6 +3,14 @@
 
 /*
 
+実行環境:
+macOS Catalina (バージョン10.15.7)
+gcc --version
+	Configured with: --prefix=/Library/Developer/CommandLineTools/usr --with-gxx-include-dir=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/4.2.1
+	Apple clang version 11.0.3 (clang-1103.0.32.29)
+	Target: x86_64-apple-darwin19.6.0
+	Thread model: posix
+
 文字列を表すバイト列を4バイトずつfloatとして読み込み、小数点以下9桁まで表示している。
 これをhelloworld.cのfに代入し、文字列として出力する。
 
@@ -21,9 +29,9 @@
 	f[2]	1.099819698e-32f
 
 helloworld.cで表示される文字列
-	Hello,Wo(\0)
-	Felln,Wovld(\n)
-	Hello,World(\n)
+	%f:   Hello,Wo(\0)
+	%ef:  Felln,Wovld(\n)
+	%.9ef Hello,World(\n)
 
 4バイトずつfloatとして読み込んでいるので
 f[0]が"hell", f[1]が"o,wo", f[2]が"rld\n", f[3]が"\0"
@@ -57,7 +65,9 @@ floatの仮数部は23ビットだが、1の位は省略される(けち表現)�
 (1つずれた場合でも小数第八位を1つずらすことで元の文字を表示することは可能。)
 
 繰り上がりの可能性がある以上何桁であっても(すべての桁を表示する場合を除いて)確実に復元できるとは言えない。
-ただし、小数第八位までの浮動小数点リテラルでほぼすべてのビット列を表すことは可能(調整は必要)。
+ただし、桁数が増えるごとに繰り上がりの可能性は低くなるので15桁程度あればほぼ確実に復元できると考えられる。
+
+調整さえすれば小数第八位までの浮動小数点数リテラルで(-0やinfなどを除く)ほぼすべてのビット列を表すことは可能。
 
 */
 
