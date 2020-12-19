@@ -1,3 +1,13 @@
+/*
+
+  gen_itemset.c でバイナリデータを作成できる
+  itemset.dat は n=10 で作成したデータ
+
+  実行例
+  ./a.out itemset.dat 60
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -143,6 +153,7 @@ Itemset *load_itemset(char filename[]) {
   for (int i=0; i<n; i++) {
     fread(&items->item[i].weight, sizeof(double), 1, fp);
   }
+  items->number = n;
 
   return items;
 }
@@ -155,7 +166,7 @@ int main (int argc, char**argv)
 {
   /* 引数処理: ユーザ入力が正しくない場合は使い方を標準エラーに表示して終了 */
   if (argc != 3){
-    fprintf(stderr, "usage: %s <the number of items (int)> <max capacity (double)>\n",argv[0]);
+    fprintf(stderr, "usage: %s <filname (char[])> <max capacity (double)>\n",argv[0]);
     exit(1);
   }
   
@@ -215,7 +226,7 @@ void free_itemset(Itemset *list)
 void print_itemset(const Itemset *list)
 {
   int n = list->number;
-  const char *format = "v[%d] = %4.1f, v[%d] = %4.1f\n";
+  const char *format = "v[%d] = %4.1f, w[%d] = %4.1f\n";
   for(int i = 0 ; i < n ; i++){
     printf(format, i, list->item[i].value, i, list->item[i].weight);
   }
