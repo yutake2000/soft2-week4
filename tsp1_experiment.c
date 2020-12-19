@@ -44,7 +44,7 @@ void draw_line(Map map, City a, City b);
 void draw_route(Map map, City *city, int n, const int *route);
 void plot_cities(FILE* fp, Map map, City *city, int n, const int *route);
 double distance(City a, City b);
-double solve(const City *city, int n, int *route);
+double solve(const City *city, int n, int *route, int times);
 Map init_map(const int width, const int height);
 void free_map_dot(Map m);
 City *load_cities(const char* filename,int *n);
@@ -88,6 +88,8 @@ int main(int argc, char**argv)
   const int height = 40;
   const int max_cities = 100;
 
+  srand((unsigned)time(NULL));
+
   Map map = init_map(width, height);
   
   FILE *fp = stdout; // とりあえず描画先は標準出力としておく
@@ -108,13 +110,16 @@ int main(int argc, char**argv)
   // 訪れた町を記録するフラグ
   //int *visited = (int*)calloc(n, sizeof(int));
 
-  const double d = solve(city,n,route);
-  plot_cities(fp, map, city, n, route);
-  printf("total distance = %f\n", d);
-  for (int i = 0 ; i < n ; i++){
-    printf("%d -> ", route[i]);
+  for (int t=1; t<=8192; t*=2) {
+    printf("%d times\n", t);
+    double sum = 0;
+    for (int s=0; s<8; s++) {
+      const double d = solve(city,n,route,t);
+      sum += d;
+      printf("total distance = %f\n", d);
+    }
+    printf("average distance = %f\n", sum / 8);
   }
-  printf("0\n");
 
   // 動的確保した環境ではfreeをする
   free(route);
@@ -274,12 +279,10 @@ Answer calc(const City *city, int n) {
   return (Answer){.dist = sum_d, .route = ans_route};
 }
 
-double solve(const City *city, int n, int *route)
+double solve(const City *city, int n, int *route, int times)
 {
 
-  srand((unsigned)time(NULL));
   Answer ans = (Answer){.dist = 1e15};
-  int times = 5e3;
   for (int i=0; i<times; i++) {
     Answer result = calc(city, n);
     //printf("d:%lf\n", result.dist);
