@@ -293,6 +293,7 @@ double solve(const City *city, int n, int *route, int times)
     Answer result = calc(city, n);
     //printf("d:%lf\n", result.dist);
     if (result.dist < ans.dist) {
+      free(ans.route);
       ans = result;
     }
   }
